@@ -103,5 +103,5 @@ testing the MCP tool handlers.
 server.py        MCP server: tools, arg parsing, clangd lifecycle
 lsp_client.py  LSP client: subprocess management, JSON-RPC framing, queries
 tests.py       Unit tests (no clangd required)
-pyproject.toml Dependencies (mcp>=1.0)
+pyproject.toml Dependencies (mcp>=2.0,<3)
 ```

@@ -22,17 +22,17 @@ The AI client invokes MCP tools. Each tool translates user intent into one or mo
 
 ## Protocol 1: Model Context Protocol (MCP)
 
-MCP is the protocol used between AI assistants and tool servers. The Python library is `mcp` (PyPI), specifically `mcp.server.fastmcp.FastMCP`.
+MCP is the protocol used between AI assistants and tool servers. The Python library is `mcp` (PyPI), specifically `mcp.server.mcpserver.MCPServer`. SDK 2.0 renamed this from `mcp.server.fastmcp.FastMCP`; the decorator and lifespan API are otherwise unchanged.
 
-**How FastMCP works:**
-- `FastMCP("name", lifespan=ctx)` creates a server.
+**How MCPServer works:**
+- `MCPServer("name", lifespan=ctx)` creates a server.
 - `@mcp.tool()` decorators on async functions register tools. The function's docstring becomes the tool description shown to the AI; the parameter names and type annotations become the tool's input schema.
 - `mcp.run()` starts the stdio transport. Internally it uses `anyio` (which adapts to asyncio) and calls into `mcp.server.stdio.stdio_server()`.
 - The `lifespan` parameter is an `@asynccontextmanager` async generator. It runs setup code before `yield` and teardown after. This is where the LSP client is started and stopped. The lifespan runs inside the same asyncio event loop as the tool handlers, so all `await` calls in tools and lifespan share the same loop — this is what makes the async LSP client work without a separate thread.
 
 **Important:** Args must be parsed at module import time (before `mcp.run()` starts its own loop), because `mcp.run()` calls `anyio.run()` which creates the event loop and then immediately runs the lifespan. There's no hook to inject pre-loop work. The pattern used here is calling `_parse_args()` at module level so `args` is available when the lifespan closure runs.
 
-**Tool return values:** Tools return plain strings. FastMCP wraps them in the MCP `TextContent` response format automatically.
+**Tool return values:** Tools return plain strings. MCPServer wraps them in the MCP `TextContent` response format automatically.
 
 ---
 
@@ -147,7 +147,7 @@ The file version number starts at 1 and must be incremented with each `textDocum
 
 ### `find_symbol("MyClass")`
 
-1. FastMCP calls `find_symbol("MyClass")` in the asyncio event loop.
+1. MCPServer calls `find_symbol("MyClass")` in the asyncio event loop.
 2. `lsp.workspace_symbol("MyClass")` calls `lsp.request("workspace/symbol", {"query": "MyClass"})`.
 3. `request()` allocates a Future, stores it in `_pending[N]`, serializes and writes the JSON-RPC request to clangd's stdin.
 4. `_read_loop()` (a background task in the same event loop) reads clangd's response from stdout, calls `_dispatch()`, which resolves `_pending[N]`.
@@ -202,7 +202,7 @@ This Go implementation was studied as the primary reference. Key things learned 
 - That `textDocument/didOpen` requires the full file text in the notification body.
 - That `workspace/symbol` does not require open files.
 - Graceful shutdown: `shutdown` request → `exit` notification → terminate/kill subprocess.
-- Parent process monitoring (the reference monitors for orphaning when Claude Desktop closes). Not implemented here — MCP servers are expected to exit when their stdio is closed, which happens automatically when FastMCP's event loop exits.
+- Parent process monitoring (the reference monitors for orphaning when Claude Desktop closes). Not implemented here — MCP servers are expected to exit when their stdio is closed, which happens automatically when MCPServer's event loop exits.
 
 The reference uses `gopls`, `typescript-language-server`, and others; the same LSP wire protocol works identically for clangd.
 
@@ -273,7 +273,7 @@ The test for `open_file` creates a real temporary file because `open_file()` rea
 
 | Package | Purpose |
 |---|---|
-| `mcp>=1.0.0` | FastMCP server, MCP stdio transport |
+| `mcp>=2.0,<3` | MCPServer, MCP stdio transport. Major-version pinned: 2.0 renamed `fastmcp.FastMCP` to `mcpserver.MCPServer`. |
 | `anyio` | Async runtime (transitive dep of mcp; compatible with asyncio) |
 | `pydantic` | Transitive dep of mcp; not used directly |
 

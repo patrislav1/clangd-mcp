@@ -21,7 +21,7 @@ import pathlib
 import sys
 from contextlib import asynccontextmanager
 
-from mcp.server.fastmcp import FastMCP
+from mcp.server.mcpserver import MCPServer
 
 from lsp_client import LSPClient, SYMBOL_KINDS, uri_to_path
 
@@ -64,7 +64,7 @@ lsp: LSPClient | None = None
 
 
 @asynccontextmanager
-async def lifespan(server: FastMCP):
+async def lifespan(server: MCPServer):
     """Start clangd when the MCP server starts; shut it down on exit."""
     global lsp
 
@@ -87,7 +87,7 @@ async def lifespan(server: FastMCP):
         await lsp.shutdown()
 
 
-mcp = FastMCP("clangd", lifespan=lifespan)
+mcp = MCPServer("clangd", lifespan=lifespan, log_level=args.log_level)
 
 # ---------------------------------------------------------------------------
 # Formatting helpers
