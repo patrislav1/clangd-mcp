@@ -2,6 +2,8 @@
 
 > **Experimental** — expect rough edges and breaking changes.
 
+**Deprecation notice**: This project is unmaintained.
+
 A minimal [Model Context Protocol](https://modelcontextprotocol.io/) server that
 bridges AI assistants to [clangd](https://clangd.llvm.org/) for C/C++ code
 intelligence.
